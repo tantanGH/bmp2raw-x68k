@@ -1,2 +1,25 @@
-# bmp2raw-x68k
+# BMP2RAW.X
+
 BMP files to RAW movie file converter for Human68k/X680x0
+
+指定したディレクトリの中にあるBMPファイルを無圧縮X68kGVRAM形式に変換して連結し、[RAWMVP.X](https://github.com/tantanGH/rawmvp/)で再生できる形式にします。
+
+---
+
+### インストール方法
+
+BMP2Rxxx.ZIP をダウンロードして展開し、BMP2RAW.X をパスの通ったディレクトリに置きます。
+
+---
+
+### 使用方法
+
+    bmp2raw <BMPファイルディレクトリ名> <出力RAWファイル名>
+
+オプションなどは特にありません。
+
+---
+
+### History
+
+* 0.1.0 (2023/08/10) ... 初版
