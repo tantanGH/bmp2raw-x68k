@@ -16,7 +16,7 @@ BMP2Rxxx.ZIP をダウンロードして展開し、BMP2RAW.X をパスの通っ
 
     bmp2raw [option] <BMPファイルディレクトリ名> <出力RAWファイル名>
     options:
-      -r <fps>:<fps> ... 連番BMPのフレームレート:出力RAWファイルのフレームレート
+      -r <src-fps>:<dst-fps> ... 連番BMPのフレームレート:出力RAWファイルのフレームレート
       -h ... show help message
     target fps:
       w256/512 ... 27.729(30) / 18.486(20) / 13.865(15)
