@@ -2,7 +2,7 @@
 
 BMP files to RAW movie file converter for Human68k/X680x0
 
-指定したディレクトリの中にあるBMPファイルを無圧縮X68kGVRAM形式に変換して連結し、[RAWMVP.X](https://github.com/tantanGH/rawmvp/)で再生できる形式にします。
+指定したディレクトリの中にあるBMPファイルを無圧縮X680x0GVRAM形式に変換して連結し、[RAWMVP.X](https://github.com/tantanGH/rawmvp/)で再生できるファイルを生成します。
 
 ---
 
