@@ -76,7 +76,13 @@ static int compare_bmp_file_names(const void* n1, const void* n2) {
 //  show help message
 //
 static void show_help_message() {
-  printf("usage: bmp2raw <bmp-files-dir> <output-raw-name>\n");
+  printf("usage: bmp2raw [options] <bmp-files-dir> <output-raw-name>\n");
+  printf("options:\n");
+  printf("       -r <source-fps>:<target-fps> ... convert fps\n");
+  printf("       -h ... show help message\n");
+  printf("target fps:\n");
+  printf(" w256/512 ... 27.729(30) / 18.486(20) / 13.865(15)\n");
+  printf("     w384 ... 28.136(30) / 18.757(20) / 14.068(15)\n");
 }
 
 //
@@ -91,21 +97,73 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   uint8_t error_message[ MAX_MES_LEN ];
   error_message[0] = '\0';
 
-  // credit
-  printf("BMP2RAW.X - BMP files to RAW movie file converter version " PROGRAM_VERSION " by tantan\n");
+  // for fps conversion
+  int16_t convert_fps = 0;
+  double source_fps = 0.0;
+  double target_fps = 0.0;
 
-  // argument check
-  if (argc < 3) {
-    show_help_message();
-    goto exit;
-  }
+  // bmp dir name
+  uint8_t* bmp_dir_name = NULL;
 
-  uint8_t* bmp_dir_name = argv[1];
-  uint8_t* raw_file_name = argv[2];
+  // output raw name
+  uint8_t* raw_file_name = NULL;
 
   // set abort vectors
   uint32_t abort_vector1 = INTVCS(0xFFF1, (int8_t*)abort_application);
   uint32_t abort_vector2 = INTVCS(0xFFF2, (int8_t*)abort_application);  
+
+  // credit
+  printf("BMP2RAW.X - BMP files to RAW movie file converter version " PROGRAM_VERSION " by tantan\n");
+
+  // parse command lines
+  for (int16_t i = 1; i < argc; i++) {
+    if (argv[i][0] == '-' && strlen(argv[i]) >= 2) {
+      if (argv[i][1] == 'r') {
+        uint8_t val[32];
+        strncpy(val, argv[i]+2, 31);
+        val[31] = '\0';
+        uint8_t* c = strchr(val, ':');
+        if (c == NULL) {
+          show_help_message();
+          goto exit;
+        }
+        *c = '\0';
+        source_fps = atof(val);
+        target_fps = atof(c+1);
+        if (source_fps < 0.0 || source_fps > 60.0 || target_fps < 0.0 || target_fps > 60.0) {
+          show_help_message();
+          goto exit;
+        }
+      } else if (argv[i][1] == 'h') {
+        show_help_message();
+        goto exit; 
+      } else {
+        show_help_message();
+        goto exit;
+      }
+    } else {
+      if (bmp_dir_name == NULL) {
+        bmp_dir_name = argv[i];
+      } else if (raw_file_name == NULL) {
+        raw_file_name = argv[i];
+      }
+    }
+  }
+
+  // input dir / output file check
+  if (bmp_dir_name == NULL || raw_file_name == NULL) {
+    show_help_message();
+    goto exit;
+  }
+
+  // fps convert?
+  if (source_fps < target_fps) {
+    // up sampling
+    convert_fps = -1;
+  } else if (source_fps > target_fps) {
+    // down sampling
+    convert_fps = 1;
+  }
 
   // check output file existence
   FILE* fp = fopen(raw_file_name, "rb");
@@ -190,37 +248,64 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   if (*c == '\\' || *c == '/') *c = '\0';
   strcat(bmp_wild_name, "\\");
 
+  if (convert_fps != 0) {
+    printf(cp932rsc_fps_convert, source_fps, target_fps);
+    printf("\n");
+  }
+
   printf(cp932rsc_start_process);
   printf("\n");
 
   // decode BMP and add to raw movie file
-  for (size_t i = 0; i < num_bmp_files; i++) {
+  double fps_counter = 0.0;
+  i = 0;
+  while (i < num_bmp_files) {
+
+    printf("\r%d/%d", i + 1, num_bmp_files);
+
+    // down sampling
+    if (convert_fps == 1) {
+      fps_counter += target_fps;
+      if (fps_counter < source_fps) {
+        goto next;
+      }
+      fps_counter -= source_fps;
+    }
+
     uint8_t bmp_path_name[ MAX_PATH_LEN ];
     strcpy(bmp_path_name, bmp_wild_name);
     strcat(bmp_path_name, bmp_file_names + 24 * i);
-    printf("\r%d/%d", i + 1, num_bmp_files);
+
     size_t written_len;
     if (bmp_decode_exec(&bmp, bmp_path_name, frame_buffer, FRAME_BUFFER_LEN, &written_len) < 0) {
       strcpy(error_message, cp932rsc_bmp_file_decode_error);
+      printf("\n");
       goto exit;      
     }
+
     int32_t rc_raw = 0;
-    if (i == 0) {
+
+    if (raw.file_name == NULL) {
       // open RAW encoder handle
       rc_raw = raw_encode_open(&raw, raw_file_name, bmp.width, bmp.height);
       if (rc_raw < 0) {
         sprintf(error_message, cp932rsc_raw_file_open_error, rc_raw);
+        printf("\n");
         goto exit;
       }
     }
+
     rc_raw = raw_encode_add_frame(&raw, frame_buffer, written_len);
     if (rc_raw == -2) {
       strcpy(error_message, cp932rsc_bmp_size_error);
+      printf("\n");
       goto exit;
     } else if(rc_raw < 0) {
       sprintf(error_message, cp932rsc_raw_file_output_error, rc_raw);
+      printf("\n");
       goto exit;
     }
+
     if (B_KEYSNS() != 0) {
       int16_t scan_code = B_KEYINP() >> 8;
       if (scan_code == KEY_SCAN_CODE_ESC) {
@@ -230,9 +315,21 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
         goto exit;
       }
     }
-    //printf("%s\n", bmp_file_names + 24 * i);
+
+next:
+    // up sampling
+    if (convert_fps == -1) {
+      fps_counter += source_fps;
+      if (fps_counter < target_fps) {
+        continue;
+      }
+      fps_counter -= target_fps;
+    }
+    i++;
   }
 
+  printf("\n");
+  printf(cp932rsc_completed);
   printf("\n");
 
   rc = 0;
