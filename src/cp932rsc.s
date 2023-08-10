@@ -1,6 +1,7 @@
   .align 2
 
   .globl _cp932rsc_output_file_exists
+  .globl _cp932rsc_fps_convert
   .globl _cp932rsc_start_process
   .globl _cp932rsc_bmp_dir_not_available
   .globl _cp932rsc_bmp_file_not_available
@@ -12,14 +13,18 @@
   .globl _cp932rsc_raw_file_output_error
   .globl _cp932rsc_out_of_memory
   .globl _cp932rsc_aborted
+  .globl _cp932rsc_completed
 
   .data
 
 _cp932rsc_output_file_exists:
   .dc.b '出力先のファイルが存在します。上書きしますか？(Y/N)',$00
 
+_cp932rsc_fps_convert:
+  .dc.b '%.3f fps から %.3f fps に変換します。',$00
+
 _cp932rsc_start_process:
-  .dc.b '変換処理を開始します。ESCキーで中断できます。',$00
+  .dc.b '処理を開始します。ESCキーで中断できます。',$00
 
 _cp932rsc_bmp_dir_not_available:
   .dc.b 'BMPファイルディレクトリが見つかりません。',$00
@@ -50,5 +55,8 @@ _cp932rsc_out_of_memory:
 
 _cp932rsc_aborted:
   .dc.b '処理を中断しました。',$00
+
+_cp932rsc_completed:
+  .dc.b '正常終了しました。',$00
 
   .end
