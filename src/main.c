@@ -79,6 +79,7 @@ static void show_help_message() {
   printf("usage: bmp2raw [options] <bmp-files-dir> <output-raw-name>\n");
   printf("options:\n");
   printf("       -r <source-fps>:<target-fps> ... convert fps\n");
+  printf("       -d ... dithering\n");
   printf("       -h ... show help message\n");
   printf("target fps:\n");
   printf(" w256/512 ... 27.729(30) / 18.486(20) / 13.865(15)\n");
@@ -101,6 +102,9 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   int16_t convert_fps = 0;
   double source_fps = 0.0;
   double target_fps = 0.0;
+
+  // dithering
+  int16_t dither = 0;
 
   // bmp dir name
   uint8_t* bmp_dir_name = NULL;
@@ -134,6 +138,8 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
           show_help_message();
           goto exit;
         }
+      } else if (argv[i][1] == 'd') {
+        dither = 1;      
       } else if (argv[i][1] == 'h') {
         show_help_message();
         goto exit; 
@@ -241,15 +247,20 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   memset(frame_buffer, 0, FRAME_BUFFER_BYTES);
 
   // open BMP decoder handle
-  bmp_decode_open(&bmp);
+  bmp_decode_open(&bmp, dither);
 
   strcpy(bmp_wild_name, bmp_dir_name);
   c = bmp_wild_name + strlen(bmp_wild_name) - 1;
   if (*c == '\\' || *c == '/') *c = '\0';
   strcat(bmp_wild_name, "\\");
 
-  if (convert_fps != 0) {
+  if (convert_fps) {
     printf(cp932rsc_fps_convert, source_fps, target_fps);
+    printf("\n");
+  }
+
+  if (dither) {
+    printf(cp932rsc_dither);
     printf("\n");
   }
 

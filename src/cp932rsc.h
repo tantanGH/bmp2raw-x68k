@@ -5,6 +5,7 @@
 
 extern uint8_t cp932rsc_output_file_exists[];
 extern uint8_t cp932rsc_fps_convert[];
+extern uint8_t cp932rsc_dither[];
 extern uint8_t cp932rsc_start_process[];
 extern uint8_t cp932rsc_bmp_dir_not_available[];
 extern uint8_t cp932rsc_bmp_file_not_available[];
