@@ -43,16 +43,16 @@ _cp932rsc_bmp_files_sorted:
   .dc.b 'BMPファイル名のソートが完了しました。',$00
 
 _cp932rsc_bmp_file_decode_error:
-  .dc.b 'BMPファイルのデコードに失敗しました。',$00
+  .dc.b 'BMPファイルのデコードに失敗しました。(%d,%s)',$00
 
 _cp932rsc_bmp_size_error:
-  .dc.b 'BMP画像の大きさが最初のフレームと違います。',$00
+  .dc.b 'BMP画像の大きさが最初のフレームと違います。(%s)',$00
 
 _cp932rsc_raw_file_open_error:
-  .dc.b 'RAWファイルを書き込みオープンできませんでした。(%d)',$00
+  .dc.b 'RAWファイルを書き込みオープンできませんでした。(%d,%s)',$00
 
 _cp932rsc_raw_file_output_error:
-  .dc.b 'RAWファイルの出力に失敗しました。(%d)',$00
+  .dc.b 'RAWファイルの出力に失敗しました。(%d,%s)',$00
 
 _cp932rsc_out_of_memory:
   .dc.b 'メモリが足りません。',$00

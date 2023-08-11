@@ -186,7 +186,11 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     }
   }
 
+  // cursor off
   C_CUROFF();
+
+  // help memory expansion
+  allmem();
 
   // open BMP folder
   uint8_t bmp_wild_name[ MAX_PATH_LEN ];
@@ -218,6 +222,10 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 
   // allocate BMP file name buffer
   bmp_file_names = himem_malloc(BMP_NAME_SIZE * num_bmp_files, 0);
+  if (bmp_file_names == NULL) {
+    strcpy(error_message, cp932rsc_out_of_memory);
+    goto exit;
+  }
   memset(bmp_file_names, 0, BMP_NAME_SIZE * num_bmp_files);
 
   // pass2: read BMP file names into buffer 
@@ -288,8 +296,9 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     strcat(bmp_path_name, bmp_file_names + 24 * i);
 
     size_t written_len;
-    if (bmp_decode_exec(&bmp, bmp_path_name, frame_buffer, FRAME_BUFFER_LEN, &written_len) < 0) {
-      strcpy(error_message, cp932rsc_bmp_file_decode_error);
+    int32_t rc_bmp = bmp_decode_exec(&bmp, bmp_path_name, frame_buffer, FRAME_BUFFER_LEN, &written_len);
+    if (rc_bmp < 0) {
+      sprintf(error_message, cp932rsc_bmp_file_decode_error, rc_bmp, bmp_path_name);
       printf("\n");
       goto exit;      
     }
@@ -300,7 +309,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       // open RAW encoder handle
       rc_raw = raw_encode_open(&raw, raw_file_name, bmp.width, bmp.height);
       if (rc_raw < 0) {
-        sprintf(error_message, cp932rsc_raw_file_open_error, rc_raw);
+        sprintf(error_message, cp932rsc_raw_file_open_error, rc_raw, raw_file_name);
         printf("\n");
         goto exit;
       }
@@ -308,11 +317,11 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
 
     rc_raw = raw_encode_add_frame(&raw, frame_buffer, written_len);
     if (rc_raw == -2) {
-      strcpy(error_message, cp932rsc_bmp_size_error);
+      sprintf(error_message, cp932rsc_bmp_size_error, bmp_path_name);
       printf("\n");
       goto exit;
     } else if(rc_raw < 0) {
-      sprintf(error_message, cp932rsc_raw_file_output_error, rc_raw);
+      sprintf(error_message, cp932rsc_raw_file_output_error, rc_raw, raw_file_name);
       printf("\n");
       goto exit;
     }
