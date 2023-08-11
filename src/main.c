@@ -77,40 +77,6 @@ static void abort_application() {
 }
 
 //
-//  quick sort comparator
-//
-//static int compare_bmp_file_names(const void* n1, const void* n2) {
-//  return stricmp((uint8_t*)n1, (uint8_t*)n2);
-//}
-
-//
-//  file name sorter with bubble sort (slow)
-//
-/*
-static void sort_bmp_file_names(uint8_t** sorted_bmp_file_names, size_t num_bmp_files) {
-
-  for (size_t i = 0; i < num_bmp_files; i++) {
-    uint8_t* cur_name = sorted_bmp_file_names[i];
-    uint8_t* min_name = cur_name;
-    size_t min_index = i;
-    for (size_t j = i + 1; j < num_bmp_files; j++) {
-      uint8_t* cmp_name = sorted_bmp_file_names[j];
-      if (stricmp(min_name, cmp_name) > 0) {
-        min_name = cmp_name;
-        min_index = j;
-      }
-    }
-    if (cur_name != min_name) {
-      sorted_bmp_file_names[i] = min_name;
-      sorted_bmp_file_names[min_index] = cur_name;
-    } else {
-      sorted_bmp_file_names[i] = cur_name;
-    }
-  }
-}
-*/
-
-//
 //  show help message
 //
 static void show_help_message() {
@@ -287,12 +253,10 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     goto exit;
   }
 
-  // sort
+  // sort BMP file names
   for (size_t i = 0; i < num_bmp_files; i++) {
     sorted_bmp_file_names[i] = bmp_file_names + i * BMP_NAME_SIZE;
   }
-  //qsort(bmp_file_names, num_bmp_files, 24, &compare_bmp_file_names);
-  //sort_bmp_file_names(sorted_bmp_file_names, num_bmp_files);
   tqsort((char**)sorted_bmp_file_names, num_bmp_files);
   printf(cp932rsc_bmp_files_sorted);
   printf("\n");
@@ -308,21 +272,25 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   // open BMP decoder handle
   bmp_decode_open(&bmp, dither);
 
+  // target BMP path
   strcpy(bmp_wild_name, bmp_dir_name);
   c = bmp_wild_name + strlen(bmp_wild_name) - 1;
   if (*c == '\\' || *c == '/') *c = '\0';
   strcat(bmp_wild_name, "\\");
 
+  // fps conversion message
   if (convert_fps) {
     printf(cp932rsc_fps_convert, source_fps, target_fps);
     printf("\n");
   }
 
+  // dithering message
   if (dither) {
     printf(cp932rsc_dither);
     printf("\n");
   }
 
+  // process start message
   printf(cp932rsc_start_process);
   printf("\n");
 
@@ -331,6 +299,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
   i = 0;
   while (i < num_bmp_files) {
 
+    // progress
     printf("\r%d/%d", i + 1, num_bmp_files);
 
     // down sampling
@@ -342,12 +311,12 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       fps_counter -= source_fps;
     }
 
+    // decode target BMP path name
     uint8_t bmp_path_name[ MAX_PATH_LEN ];
     strcpy(bmp_path_name, bmp_wild_name);
     strcat(bmp_path_name, sorted_bmp_file_names[i]);
 
-//    printf("%s\n", bmp_path_name);
-
+    // decode a BMP file
     size_t written_len;
     int32_t rc_bmp = bmp_decode_exec(&bmp, bmp_path_name, frame_buffer, FRAME_BUFFER_LEN, &written_len);
     if (rc_bmp < 0) {
@@ -359,7 +328,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
     int32_t rc_raw = 0;
 
     if (raw.file_name == NULL) {
-      // open RAW encoder handle
+      // open RAW encoder handle if not opened yet
       rc_raw = raw_encode_open(&raw, raw_file_name, bmp.width, bmp.height);
       if (rc_raw < 0) {
         sprintf(error_message, cp932rsc_raw_file_open_error, rc_raw, raw_file_name);
@@ -368,6 +337,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       }
     }
 
+    // add a frame to the raw encoder
     rc_raw = raw_encode_add_frame(&raw, frame_buffer, written_len);
     if (rc_raw == -2) {
       sprintf(error_message, cp932rsc_bmp_size_error, bmp_path_name);
@@ -379,6 +349,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       goto exit;
     }
 
+    // check esc key to cancel
     if (B_KEYSNS() != 0) {
       int16_t scan_code = B_KEYINP() >> 8;
       if (scan_code == KEY_SCAN_CODE_ESC) {
@@ -422,6 +393,10 @@ exit:
   }
 
   // reclaim bmp file name buffer memory
+  if (sorted_bmp_file_names != NULL) {
+    himem_free(sorted_bmp_file_names, 0);
+    sorted_bmp_file_names = NULL;
+  }
   if (bmp_file_names != NULL) {
     himem_free(bmp_file_names, 0);
     bmp_file_names = NULL;
