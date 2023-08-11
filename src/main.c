@@ -354,7 +354,7 @@ int32_t main(int32_t argc, uint8_t* argv[]) {
       int16_t scan_code = B_KEYINP() >> 8;
       if (scan_code == KEY_SCAN_CODE_ESC) {
         printf("\n");
-        printf(cp932rsc_aborted);
+        printf(cp932rsc_aborted, bmp.width, bmp.height, raw.num_frames);
         printf("\n");
         goto exit;
       }
@@ -373,7 +373,7 @@ next:
   }
 
   printf("\n");
-  printf(cp932rsc_completed);
+  printf(cp932rsc_completed, bmp.width, bmp.height, raw.num_frames);
   printf("\n");
 
   rc = 0;
