@@ -12,9 +12,6 @@ typedef struct {
   uint16_t* rgb555_r;
   uint16_t* rgb555_g;
   uint16_t* rgb555_b;
-//  uint16_t* rgb555_r2;
-//  uint16_t* rgb555_g2;
-//  uint16_t* rgb555_b2;
   int8_t* rgb555_e1;
   int8_t* rgb555_e3;
   int8_t* rgb555_e5;

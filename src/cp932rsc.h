@@ -10,6 +10,7 @@ extern uint8_t cp932rsc_start_process[];
 extern uint8_t cp932rsc_bmp_dir_not_available[];
 extern uint8_t cp932rsc_bmp_file_not_available[];
 extern uint8_t cp932rsc_bmp_files_found[];
+extern uint8_t cp932rsc_bmp_files_sorting[];
 extern uint8_t cp932rsc_bmp_files_sorted[];
 extern uint8_t cp932rsc_bmp_file_decode_error[];
 extern uint8_t cp932rsc_bmp_size_error[];
