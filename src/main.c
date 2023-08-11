@@ -78,7 +78,7 @@ static int compare_bmp_file_names(const void* n1, const void* n2) {
 static void show_help_message() {
   printf("usage: bmp2raw [options] <bmp-files-dir> <output-raw-name>\n");
   printf("options:\n");
-  printf("       -r <source-fps>:<target-fps> ... convert fps\n");
+  printf("       -r<source-fps>:<target-fps> ... convert fps\n");
   printf("       -d ... dithering\n");
   printf("       -h ... show help message\n");
   printf("target fps:\n");
