@@ -8,9 +8,14 @@
 //
 //  init BMP decode handler
 //
-int32_t bmp_decode_open(BMP_DECODE_HANDLE* bmp) {
+int32_t bmp_decode_open(BMP_DECODE_HANDLE* bmp, int16_t dither) {
 
   int32_t rc = -1;
+
+  bmp->width = 0;
+  bmp->height = 0;
+  bmp->brightness = 100;
+  bmp->dither = dither;
 
   bmp->rgb555_r = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
   bmp->rgb555_g = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
@@ -18,13 +23,32 @@ int32_t bmp_decode_open(BMP_DECODE_HANDLE* bmp) {
 
   if (bmp->rgb555_r == NULL || bmp->rgb555_g == NULL || bmp->rgb555_b == NULL) goto exit;
 
-  int32_t brightness = 100;
+//  bmp->rgb555_r2 = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
+//  bmp->rgb555_g2 = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
+//  bmp->rgb555_b2 = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
+
+//  if (bmp->rgb555_r2 == NULL || bmp->rgb555_g2 == NULL || bmp->rgb555_b2 == NULL) goto exit;
+
+  bmp->rgb555_e1 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+  bmp->rgb555_e3 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+  bmp->rgb555_e5 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+  bmp->rgb555_e7 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+  if (bmp->rgb555_e1 == NULL || bmp->rgb555_e3 == NULL || bmp->rgb555_e5 == NULL || bmp->rgb555_e7 == NULL) goto exit;
 
   for (int16_t i = 0; i < 256; i++) {
-    uint32_t c = (uint32_t)(i * 32 * brightness / 100) >> 8;
+    uint32_t c = (uint32_t)(i * 32 * bmp->brightness / 100) >> 8;
     bmp->rgb555_r[i] = (uint16_t)(c <<  6);
     bmp->rgb555_g[i] = (uint16_t)(c << 11);
     bmp->rgb555_b[i] = (uint16_t)(c <<  1);
+//    uint32_t c2 = (uint32_t)((( i & 4 ) ? i + 8 : i ) * 32 * bmp->brightness / 100) >> 8;
+//    if (c2 >= 31) c2 = 31;
+//    bmp->rgb555_r2[i] = (uint16_t)(c2 <<  6);
+//    bmp->rgb555_g2[i] = (uint16_t)(c2 << 11);
+//    bmp->rgb555_b2[i] = (uint16_t)(c2 <<  1);
+    bmp->rgb555_e1[i] = ((i & 0xf8) - i) * 1 / 16;
+    bmp->rgb555_e3[i] = ((i & 0xf8) - i) * 3 / 16;
+    bmp->rgb555_e5[i] = ((i & 0xf8) - i) * 5 / 16;
+    bmp->rgb555_e7[i] = ((i & 0xf8) - i) * 7 / 16;
   }
 
   rc = 0;
@@ -49,6 +73,34 @@ void bmp_decode_close(BMP_DECODE_HANDLE* bmp) {
     himem_free(bmp->rgb555_b, 0);
     bmp->rgb555_b = NULL;
   }   
+//  if (bmp->rgb555_r2 != NULL) {
+//    himem_free(bmp->rgb555_r2, 0);
+//    bmp->rgb555_r2 = NULL;
+//  }
+//  if (bmp->rgb555_g2 != NULL) {
+//    himem_free(bmp->rgb555_g2, 0);
+//    bmp->rgb555_g2 = NULL;
+//  }
+//  if (bmp->rgb555_b2 != NULL) {
+//    himem_free(bmp->rgb555_b2, 0);
+//    bmp->rgb555_b2 = NULL;
+//  }   
+    if (bmp->rgb555_e1 != NULL) {
+      himem_free(bmp->rgb555_e1, 0);
+      bmp->rgb555_e1 = NULL;
+    }
+    if (bmp->rgb555_e3 != NULL) {
+      himem_free(bmp->rgb555_e3, 0);
+      bmp->rgb555_e3 = NULL;
+    }
+    if (bmp->rgb555_e5 != NULL) {
+      himem_free(bmp->rgb555_e5, 0);
+      bmp->rgb555_e5 = NULL;
+    }
+    if (bmp->rgb555_e7 != NULL) {
+      himem_free(bmp->rgb555_e7, 0);
+      bmp->rgb555_e7 = NULL;
+    }
 }
 
 //
@@ -127,20 +179,103 @@ int32_t bmp_decode_exec(BMP_DECODE_HANDLE* bmp, uint8_t* bmp_file_name, uint16_t
   uint8_t* bmp_bitmap = bmp_buffer + 54;
   size_t padding = (4 - ((bmp_width * 3) % 4)) % 4;
 
-  for (int32_t y = bmp_height - 1; y >= 0; y--) {
-  
-    uint16_t* vvram = decode_buffer + y * 512;
+  if (bmp->dither) {
 
-    for (int32_t x = 0; x < bmp_width; x++) {
-      uint8_t b = *bmp_bitmap++;
-      uint8_t g = *bmp_bitmap++;
-      uint8_t r = *bmp_bitmap++;
-      uint16_t c = bmp->rgb555_g[ g ] | bmp->rgb555_r[ r ] | bmp->rgb555_b[ b ];
-      vvram[ x ] = (c == 0) ? 0 : c + 1;
+    for (int32_t y = bmp_height - 1; y >= 0; y--) {
+    
+      uint16_t* vvram = decode_buffer + y * 512;
+
+      for (int32_t x = 0; x < bmp_width; x++) {
+        uint8_t b = *bmp_bitmap++;
+        uint8_t g = *bmp_bitmap++;
+        uint8_t r = *bmp_bitmap++;
+        uint16_t c = bmp->rgb555_g[ g ] | bmp->rgb555_r[ r ] | bmp->rgb555_b[ b ];
+        vvram[ x ] = (c == 0) ? 0 : c + 1;
+
+        if (x < bmp_width - 1) {
+          int16_t b2 = bmp_bitmap[0] + bmp->rgb555_e7[b];
+          int16_t g2 = bmp_bitmap[1] + bmp->rgb555_e7[g];
+          int16_t r2 = bmp_bitmap[2] + bmp->rgb555_e7[r];
+          if (b2 < 0) b2 = 0;
+          if (g2 < 0) g2 = 0;
+          if (r2 < 0) r2 = 0;
+          if (b2 > 255) b2 = 255;
+          if (g2 > 255) g2 = 255;
+          if (r2 > 255) r2 = 255;
+          bmp_bitmap[0] = b2;
+          bmp_bitmap[1] = g2;
+          bmp_bitmap[2] = r2;
+        }
+
+        if (y > 0) {
+          int16_t b2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 0 ] + bmp->rgb555_e5[b];
+          int16_t g2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 1 ] + bmp->rgb555_e5[g];
+          int16_t r2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 2 ] + bmp->rgb555_e5[r];
+          if (b2 < 0) b2 = 0;
+          if (g2 < 0) g2 = 0;
+          if (r2 < 0) r2 = 0;
+          if (b2 > 255) b2 = 255;
+          if (g2 > 255) g2 = 255;
+          if (r2 > 255) r2 = 255;
+          bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 0 ] = b2;
+          bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 1 ] = g2;
+          bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 2 ] = r2;
+
+          if (x > 0) {
+            int16_t b2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 - 3 ] + bmp->rgb555_e3[b];
+            int16_t g2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 - 2 ] + bmp->rgb555_e3[g];
+            int16_t r2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 - 1 ] + bmp->rgb555_e3[r];
+            if (b2 < 0) b2 = 0;
+            if (g2 < 0) g2 = 0;
+            if (r2 < 0) r2 = 0;
+            if (b2 > 255) b2 = 255;
+            if (g2 > 255) g2 = 255;
+            if (r2 > 255) r2 = 255;
+            bmp_bitmap[ bmp_width * 3 + padding + x * 3 - 3 ] = b2;
+            bmp_bitmap[ bmp_width * 3 + padding + x * 3 - 2 ] = g2;
+            bmp_bitmap[ bmp_width * 3 + padding + x * 3 - 1 ] = r2;
+          }
+          if (x < bmp_width - 1) {
+            int16_t b2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 3 ] + bmp->rgb555_e1[b];
+            int16_t g2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 4 ] + bmp->rgb555_e1[g];
+            int16_t r2 = bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 5 ] + bmp->rgb555_e1[r];
+            if (b2 < 0) b2 = 0;
+            if (g2 < 0) g2 = 0;
+            if (r2 < 0) r2 = 0;
+            if (b2 > 255) b2 = 255;
+            if (g2 > 255) g2 = 255;
+            if (r2 > 255) r2 = 255;
+            bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 3 ] = b2;
+            bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 4 ] = g2;
+            bmp_bitmap[ bmp_width * 3 + padding + x * 3 + 5 ] = r2;
+          }
+        }
+
+      }
+
+      bmp_bitmap += padding;
+      *decoded_len = *decoded_len + bmp_width;
+
     }
 
-    bmp_bitmap += padding;
-    *decoded_len = *decoded_len + bmp_width;
+  } else {
+
+    for (int32_t y = bmp_height - 1; y >= 0; y--) {
+    
+      uint16_t* vvram = decode_buffer + y * 512;
+
+      for (int32_t x = 0; x < bmp_width; x++) {
+        uint8_t b = *bmp_bitmap++;
+        uint8_t g = *bmp_bitmap++;
+        uint8_t r = *bmp_bitmap++;
+        uint16_t c = bmp->rgb555_g[ g ] | bmp->rgb555_r[ r ] | bmp->rgb555_b[ b ];
+        vvram[ x ] = (c == 0) ? 0 : c + 1;
+      }
+
+      bmp_bitmap += padding;
+      *decoded_len = *decoded_len + bmp_width;
+    }
+
   }
 
   rc = 0;

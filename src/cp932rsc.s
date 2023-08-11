@@ -2,6 +2,7 @@
 
   .globl _cp932rsc_output_file_exists
   .globl _cp932rsc_fps_convert
+  .globl _cp932rsc_dither
   .globl _cp932rsc_start_process
   .globl _cp932rsc_bmp_dir_not_available
   .globl _cp932rsc_bmp_file_not_available
@@ -22,6 +23,9 @@ _cp932rsc_output_file_exists:
 
 _cp932rsc_fps_convert:
   .dc.b '%.3f fps から %.3f fps に変換します。',$00
+
+_cp932rsc_dither:
+  .dc.b 'ディザリングを行います。',$00
 
 _cp932rsc_start_process:
   .dc.b '処理を開始します。ESCキーで中断できます。',$00
