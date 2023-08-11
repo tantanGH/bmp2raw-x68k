@@ -26,13 +26,13 @@ TARGET_FILE = BMP2RAW.X
 DOCUMENT_FILE = BMP2RAW.DOC
 
 # Distribution package 
-PACKAGE_FILE = ../BMP2R036.ZIP
+PACKAGE_FILE = ../BMP2R040.ZIP
 
 # ヘッダ検索パス
 INCLUDE_FLAGS = -I${XDEV68K_DIR}/include/xc -I${XDEV68K_DIR}/include/xdev68k
 
 # コンパイルフラグ
-COMMON_FLAGS = -m68000 -O2 $(INCLUDE_FLAGS) -z-stack=8192
+COMMON_FLAGS = -m68000 -O2 $(INCLUDE_FLAGS) -z-stack=16384
 CFLAGS = $(COMMON_FLAGS) -Wno-builtin-declaration-mismatch -fcall-used-d2 -fcall-used-a2 \
     -fexec-charset=cp932 -fverbose-asm -fno-defer-pop
 

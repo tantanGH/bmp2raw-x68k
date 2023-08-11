@@ -12,33 +12,42 @@ int32_t bmp_decode_open(BMP_DECODE_HANDLE* bmp, int16_t dither) {
 
   int32_t rc = -1;
 
+  // init attributes
   bmp->width = 0;
   bmp->height = 0;
   bmp->brightness = 100;
   bmp->dither = dither;
 
+  // allocate color mapping table buffers
   bmp->rgb555_r = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
   bmp->rgb555_g = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
   bmp->rgb555_b = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
 
   if (bmp->rgb555_r == NULL || bmp->rgb555_g == NULL || bmp->rgb555_b == NULL) goto exit;
 
-  bmp->rgb555_e1 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
-  bmp->rgb555_e3 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
-  bmp->rgb555_e5 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
-  bmp->rgb555_e7 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
-  if (bmp->rgb555_e1 == NULL || bmp->rgb555_e3 == NULL || bmp->rgb555_e5 == NULL || bmp->rgb555_e7 == NULL) goto exit;
-
+  // initialize color mapping tables
   for (int16_t i = 0; i < 256; i++) {
     uint32_t c = (uint32_t)(i * 32 * bmp->brightness / 100) >> 8;
     bmp->rgb555_r[i] = (uint16_t)(c <<  6);
     bmp->rgb555_g[i] = (uint16_t)(c << 11);
     bmp->rgb555_b[i] = (uint16_t)(c <<  1);
+  }
 
-    bmp->rgb555_e1[i] = ((i & 0xf8) - i) * 1 / 16;
-    bmp->rgb555_e3[i] = ((i & 0xf8) - i) * 3 / 16;
-    bmp->rgb555_e5[i] = ((i & 0xf8) - i) * 5 / 16;
-    bmp->rgb555_e7[i] = ((i & 0xf8) - i) * 7 / 16;
+  if (bmp->dither) {
+    // allocate error table buffers for dithering
+    bmp->rgb555_e1 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+    bmp->rgb555_e3 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+    bmp->rgb555_e5 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+    bmp->rgb555_e7 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
+    if (bmp->rgb555_e1 == NULL || bmp->rgb555_e3 == NULL || bmp->rgb555_e5 == NULL || bmp->rgb555_e7 == NULL) goto exit;
+    
+    // initialize error tables
+    for (int16_t i = 0; i < 256; i++) {
+      bmp->rgb555_e1[i] = ((i & 0xf8) - i) * 1 / 16;
+      bmp->rgb555_e3[i] = ((i & 0xf8) - i) * 3 / 16;
+      bmp->rgb555_e5[i] = ((i & 0xf8) - i) * 5 / 16;
+      bmp->rgb555_e7[i] = ((i & 0xf8) - i) * 7 / 16;
+    }
   }
 
   rc = 0;
@@ -51,6 +60,8 @@ exit:
 //  close BMP decode handler
 //
 void bmp_decode_close(BMP_DECODE_HANDLE* bmp) {
+
+  // reclaim color mapping table buffers
   if (bmp->rgb555_r != NULL) {
     himem_free(bmp->rgb555_r, 0);
     bmp->rgb555_r = NULL;
@@ -64,6 +75,7 @@ void bmp_decode_close(BMP_DECODE_HANDLE* bmp) {
     bmp->rgb555_b = NULL;
   }
 
+  // reclaim dithering error table buffers
   if (bmp->rgb555_e1 != NULL) {
     himem_free(bmp->rgb555_e1, 0);
     bmp->rgb555_e1 = NULL;
@@ -160,6 +172,8 @@ int32_t bmp_decode_exec(BMP_DECODE_HANDLE* bmp, uint8_t* bmp_file_name, uint16_t
 
   if (bmp->dither) {
 
+    // dithering mode
+
     for (int32_t y = bmp_height - 1; y >= 0; y--) {
     
       uint16_t* vvram = decode_buffer + y * 512;
@@ -239,6 +253,8 @@ int32_t bmp_decode_exec(BMP_DECODE_HANDLE* bmp, uint8_t* bmp_file_name, uint16_t
 
   } else {
 
+    // non-dithering mode
+
     for (int32_t y = bmp_height - 1; y >= 0; y--) {
     
       uint16_t* vvram = decode_buffer + y * 512;
@@ -261,11 +277,13 @@ int32_t bmp_decode_exec(BMP_DECODE_HANDLE* bmp, uint8_t* bmp_file_name, uint16_t
 
 exit:
 
+  // close BMP file handle
   if (fp != NULL) {
     fclose(fp);
     fp = NULL;
   }
 
+  // reclaim BMP memory buffer
   if (bmp_buffer != NULL) {
     himem_free(bmp_buffer, 0);
     bmp_buffer = NULL;
