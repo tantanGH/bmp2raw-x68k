@@ -74,6 +74,10 @@ int32_t raw_encode_close(RAW_ENCODE_HANDLE* raw) {
 
   }
 
+  rc = 0;
+
+exit:
+
   if (raw->fp != NULL) {
     fclose(raw->fp);
     raw->fp = NULL;
@@ -83,10 +87,6 @@ int32_t raw_encode_close(RAW_ENCODE_HANDLE* raw) {
     himem_free(raw->raw_buffer, 0);
     raw->raw_buffer = NULL;
   }
-
-  rc = 0;
-
-exit:
 
   return rc;
 }

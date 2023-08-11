@@ -7,6 +7,7 @@
   .globl _cp932rsc_bmp_dir_not_available
   .globl _cp932rsc_bmp_file_not_available
   .globl _cp932rsc_bmp_files_found
+  .globl _cp932rsc_bmp_files_sorting
   .globl _cp932rsc_bmp_files_sorted
   .globl _cp932rsc_bmp_file_decode_error
   .globl _cp932rsc_bmp_size_error
@@ -38,6 +39,9 @@ _cp932rsc_bmp_file_not_available:
 
 _cp932rsc_bmp_files_found:
   .dc.b '%d 件のBMPファイルが %s ディレクトリに見つかりました。',$00
+
+_cp932rsc_bmp_files_sorting:
+  .dc.b 'BMPファイル名をソートしています。',$00
 
 _cp932rsc_bmp_files_sorted:
   .dc.b 'BMPファイル名のソートが完了しました。',$00

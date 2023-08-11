@@ -61,9 +61,9 @@ int __himem_resize(void* ptr, size_t size) {
 //  allocate main memory
 //
 static void* __mainmem_malloc(size_t size) {
-  //uint32_t addr = MALLOC(size);
-  //return (addr >= 0x81000000) ? NULL : (void*)addr;
-  return malloc(size);
+  uint32_t addr = MALLOC(size);
+  return (addr >= 0x81000000) ? NULL : (void*)addr;
+  //return malloc(size);
 }
 
 //
@@ -71,8 +71,8 @@ static void* __mainmem_malloc(size_t size) {
 //
 static void __mainmem_free(void* ptr) {
   if (ptr == NULL) return;
-  //MFREE((uint32_t)ptr);
-  free(ptr);
+  MFREE((uint32_t)ptr);
+  //free(ptr);
 }
 
 //

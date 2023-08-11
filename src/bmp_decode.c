@@ -23,12 +23,6 @@ int32_t bmp_decode_open(BMP_DECODE_HANDLE* bmp, int16_t dither) {
 
   if (bmp->rgb555_r == NULL || bmp->rgb555_g == NULL || bmp->rgb555_b == NULL) goto exit;
 
-//  bmp->rgb555_r2 = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
-//  bmp->rgb555_g2 = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
-//  bmp->rgb555_b2 = (uint16_t*)himem_malloc(sizeof(uint16_t) * 256, 0);
-
-//  if (bmp->rgb555_r2 == NULL || bmp->rgb555_g2 == NULL || bmp->rgb555_b2 == NULL) goto exit;
-
   bmp->rgb555_e1 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
   bmp->rgb555_e3 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
   bmp->rgb555_e5 = (int8_t*)himem_malloc(sizeof(int8_t) * 256, 0);
@@ -40,11 +34,7 @@ int32_t bmp_decode_open(BMP_DECODE_HANDLE* bmp, int16_t dither) {
     bmp->rgb555_r[i] = (uint16_t)(c <<  6);
     bmp->rgb555_g[i] = (uint16_t)(c << 11);
     bmp->rgb555_b[i] = (uint16_t)(c <<  1);
-//    uint32_t c2 = (uint32_t)((( i & 4 ) ? i + 8 : i ) * 32 * bmp->brightness / 100) >> 8;
-//    if (c2 >= 31) c2 = 31;
-//    bmp->rgb555_r2[i] = (uint16_t)(c2 <<  6);
-//    bmp->rgb555_g2[i] = (uint16_t)(c2 << 11);
-//    bmp->rgb555_b2[i] = (uint16_t)(c2 <<  1);
+
     bmp->rgb555_e1[i] = ((i & 0xf8) - i) * 1 / 16;
     bmp->rgb555_e3[i] = ((i & 0xf8) - i) * 3 / 16;
     bmp->rgb555_e5[i] = ((i & 0xf8) - i) * 5 / 16;
@@ -72,35 +62,24 @@ void bmp_decode_close(BMP_DECODE_HANDLE* bmp) {
   if (bmp->rgb555_b != NULL) {
     himem_free(bmp->rgb555_b, 0);
     bmp->rgb555_b = NULL;
-  }   
-//  if (bmp->rgb555_r2 != NULL) {
-//    himem_free(bmp->rgb555_r2, 0);
-//    bmp->rgb555_r2 = NULL;
-//  }
-//  if (bmp->rgb555_g2 != NULL) {
-//    himem_free(bmp->rgb555_g2, 0);
-//    bmp->rgb555_g2 = NULL;
-//  }
-//  if (bmp->rgb555_b2 != NULL) {
-//    himem_free(bmp->rgb555_b2, 0);
-//    bmp->rgb555_b2 = NULL;
-//  }   
-    if (bmp->rgb555_e1 != NULL) {
-      himem_free(bmp->rgb555_e1, 0);
-      bmp->rgb555_e1 = NULL;
-    }
-    if (bmp->rgb555_e3 != NULL) {
-      himem_free(bmp->rgb555_e3, 0);
-      bmp->rgb555_e3 = NULL;
-    }
-    if (bmp->rgb555_e5 != NULL) {
-      himem_free(bmp->rgb555_e5, 0);
-      bmp->rgb555_e5 = NULL;
-    }
-    if (bmp->rgb555_e7 != NULL) {
-      himem_free(bmp->rgb555_e7, 0);
-      bmp->rgb555_e7 = NULL;
-    }
+  }
+
+  if (bmp->rgb555_e1 != NULL) {
+    himem_free(bmp->rgb555_e1, 0);
+    bmp->rgb555_e1 = NULL;
+  }
+  if (bmp->rgb555_e3 != NULL) {
+    himem_free(bmp->rgb555_e3, 0);
+    bmp->rgb555_e3 = NULL;
+  }
+  if (bmp->rgb555_e5 != NULL) {
+    himem_free(bmp->rgb555_e5, 0);
+    bmp->rgb555_e5 = NULL;
+  }
+  if (bmp->rgb555_e7 != NULL) {
+    himem_free(bmp->rgb555_e7, 0);
+    bmp->rgb555_e7 = NULL;
+  }
 }
 
 //
