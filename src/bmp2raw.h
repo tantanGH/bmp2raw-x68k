@@ -1,7 +1,7 @@
 #ifndef __H_BMP2RAW__
 #define __H_BMP2RAW__
 
-#define PROGRAM_VERSION "0.4.0"
+#define PROGRAM_VERSION "0.4.1"
 
 #define MAX_PATH_LEN  (256)
 #define MAX_MES_LEN   (256)
